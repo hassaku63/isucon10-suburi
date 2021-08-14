@@ -8,6 +8,7 @@ from werkzeug.exceptions import BadRequest, NotFound
 import mysql.connector
 from sqlalchemy.pool import QueuePool
 from humps import camelize
+from sympy.geometry import Polygon, Point
 
 from pathlib import Path
 import newrelic.agent
@@ -315,11 +316,11 @@ def post_estate_nazotte():
         raise BadRequest()
     longitudes = [c["longitude"] for c in coordinates]
     latitudes = [c["latitude"] for c in coordinates]
+    poly = [(c["longitude"],c["latitude"]) for c in coordinates]
     bounding_box = {
         "top_left_corner": {"longitude": min(longitudes), "latitude": min(latitudes)},
         "bottom_right_corner": {"longitude": max(longitudes), "latitude": max(latitudes)},
     }
-
     cnx = cnxpool.connect()
     try:
         cur = cnx.cursor(dictionary=True)
@@ -339,14 +340,17 @@ def post_estate_nazotte():
         estates = cur.fetchall()
         estates_in_polygon = []
         for estate in estates:
-            query = "SELECT * FROM estate WHERE id = %s AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))"
-            polygon_text = (
-                f"POLYGON(({','.join(['{} {}'.format(c['latitude'], c['longitude']) for c in coordinates])}))"
-            )
-            geom_text = f"POINT({estate['latitude']} {estate['longitude']})"
-            cur.execute(query, (estate["id"], polygon_text, geom_text))
-            if len(cur.fetchall()) > 0:
+            p = Point(estate['longitude'], estate['latitude'])
+            if poly.encloses_point(p):
                 estates_in_polygon.append(estate)
+        #     query = "SELECT * FROM estate WHERE id = %s AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))"
+        #     polygon_text = (
+        #         f"POLYGON(({','.join(['{} {}'.format(c['latitude'], c['longitude']) for c in coordinates])}))"
+        #     )
+        #     geom_text = f"POINT({estate['latitude']} {estate['longitude']})"
+        #     cur.execute(query, (estate["id"], polygon_text, geom_text))
+        #     if len(cur.fetchall()) > 0:
+        #         estates_in_polygon.append(estate)
     finally:
         cnx.close()
 
