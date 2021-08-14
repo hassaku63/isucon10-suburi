@@ -11,6 +11,8 @@ from humps import camelize
 
 from pathlib import Path
 import newrelic.agent
+from newrelic.agent import datastore_trace, DatabaseTrace
+
 
 app_root_dir = Path(__file__).parent
 newrelic_config_file = (app_root_dir / 'newrelic.ini')
@@ -35,6 +37,15 @@ mysql_connection_env = {
 }
 
 cnxpool = QueuePool(lambda: mysql.connector.connect(**mysql_connection_env), pool_size=10)
+
+
+def create_datastore_trace_ctx(table_name, sql):
+    return DatabaseTrace(
+        product='MySQL',
+        target=table_name,
+        operation=sql.split(' ')[0].lower(),
+        sql=sql
+    )
 
 
 def select_all(query, *args, dictionary=True):
@@ -70,7 +81,9 @@ def post_initialize():
 
 @app.route("/api/estate/low_priced", methods=["GET"])
 def get_estate_low_priced():
-    rows = select_all("SELECT * FROM estate ORDER BY rent ASC, id ASC LIMIT %s", (LIMIT,))
+    q = "SELECT * FROM estate ORDER BY rent ASC, id ASC LIMIT %s", (LIMIT,)
+    with create_datastore_trace_ctx('estate', q):
+        rows = select_all(q)
     return {"estates": camelize(rows)}
 
 
