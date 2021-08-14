@@ -70,7 +70,7 @@ def post_initialize():
 
 @app.route("/api/estate/low_priced", methods=["GET"])
 def get_estate_low_priced():
-    rows = select_all("SELECT * FROM estate ORDER BY rent ASC, id ASC LIMIT %s", (LIMIT,))
+    rows = select_all("SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate ORDER BY rent ASC, id ASC LIMIT %s", (LIMIT,))
     return {"estates": camelize(rows)}
 
 
@@ -287,10 +287,10 @@ def get_estate_search():
     query = f"SELECT COUNT(*) as count FROM estate WHERE {search_condition}"
     count = select_row(query, params)["count"]
 
-    query = f"SELECT * FROM estate WHERE {search_condition} ORDER BY popularity DESC, id ASC LIMIT %s OFFSET %s"
+    query = f"SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE {search_condition} ORDER BY popularity DESC, id ASC LIMIT %s OFFSET %s"
     chairs = select_all(query, params + [per_page, per_page * page])
 
-    return {"count": count, "estates": camelize(chairs)}
+    return {"count": count, "esttes": camelize(chairs)}
 
 
 @app.route("/api/estate/search/condition", methods=["GET"])
@@ -300,7 +300,7 @@ def get_estate_search_condition():
 
 @app.route("/api/estate/req_doc/<int:estate_id>", methods=["POST"])
 def post_estate_req_doc(estate_id):
-    estate = select_row("SELECT * FROM estate WHERE id = %s", (estate_id,))
+    estate = select_row("SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE id = %s", (estate_id,))
     if estate is None:
         raise NotFound()
     return {"ok": True}
@@ -323,30 +323,44 @@ def post_estate_nazotte():
     cnx = cnxpool.connect()
     try:
         cur = cnx.cursor(dictionary=True)
+        # cur.execute(
+        #     (
+        #         "SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate"
+        #         " WHERE latitude <= %s AND latitude >= %s AND longitude <= %s AND longitude >= %s"
+        #         " ORDER BY popularity DESC, id ASC"
+        #     ),
+        #     (
+        #         bounding_box["bottom_right_corner"]["latitude"],
+        #         bounding_box["top_left_corner"]["latitude"],
+        #         bounding_box["bottom_right_corner"]["longitude"],
+        #         bounding_box["top_left_corner"]["longitude"],
+        #     ),
+        # )
+        # estates = cur.fetchall()
+        # estates_in_polygon = []
+        # for estate in estates:
+        #     query = "SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE id = %s AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))"
+        #     polygon_text = (
+        #         f"POLYGON(({','.join(['{} {}'.format(c['latitude'], c['longitude']) for c in coordinates])}))"
+        #     )
+        #     geom_text = f"POINT({estate['latitude']} {estate['longitude']})"
+        #     cur.execute(query, (estate["id"], polygon_text, geom_text))
+        #     if len(cur.fetchall()) > 0:
+        #         estates_in_polygon.append(estate)
+
+        # Spacial
+        polygon_text = (
+            f"POLYGON(({','.join(['{} {}'.format(c['latitude'], c['longitude']) for c in coordinates])}))"
+        )
         cur.execute(
             (
-                "SELECT * FROM estate"
-                " WHERE latitude <= %s AND latitude >= %s AND longitude <= %s AND longitude >= %s"
-                " ORDER BY popularity DESC, id ASC"
-            ),
-            (
-                bounding_box["bottom_right_corner"]["latitude"],
-                bounding_box["top_left_corner"]["latitude"],
-                bounding_box["bottom_right_corner"]["longitude"],
-                bounding_box["top_left_corner"]["longitude"],
-            ),
+                "SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate"
+                    " ST_Contains(ST_PolygonFromText(%s), latlng)"
+                    " ORDER BY popularity DESC, id ASC"
+            ), (polygon_text)
         )
-        estates = cur.fetchall()
-        estates_in_polygon = []
-        for estate in estates:
-            query = "SELECT * FROM estate WHERE id = %s AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))"
-            polygon_text = (
-                f"POLYGON(({','.join(['{} {}'.format(c['latitude'], c['longitude']) for c in coordinates])}))"
-            )
-            geom_text = f"POINT({estate['latitude']} {estate['longitude']})"
-            cur.execute(query, (estate["id"], polygon_text, geom_text))
-            if len(cur.fetchall()) > 0:
-                estates_in_polygon.append(estate)
+        estates_in_polygon = cur.fetchall()
+
     finally:
         cnx.close()
 
@@ -361,7 +375,7 @@ def post_estate_nazotte():
 
 @app.route("/api/estate/<int:estate_id>", methods=["GET"])
 def get_estate(estate_id):
-    estate = select_row("SELECT * FROM estate WHERE id = %s", (estate_id,))
+    estate = select_row("SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE id = %s", (estate_id,))
     if estate is None:
         raise NotFound()
     return camelize(estate)
@@ -374,7 +388,7 @@ def get_recommended_estate(chair_id):
         raise BadRequest(f"Invalid format searchRecommendedEstateWithChair id : {chair_id}")
     w, h, d = chair["width"], chair["height"], chair["depth"]
     query = (
-        "SELECT * FROM estate"
+        "SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate"
         " WHERE (door_width >= %s AND door_height >= %s)"
         "    OR (door_width >= %s AND door_height >= %s)"
         "    OR (door_width >= %s AND door_height >= %s)"
