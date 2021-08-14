@@ -15,7 +15,7 @@ import newrelic.agent
 app_root_dir = Path(__file__).parent
 newrelic_config_file = (app_root_dir / 'newrelic.ini')
 if newrelic_config_file.exists():
-newrelic.agent.initialize(newrelic_config_file)
+    newrelic.agent.initialize(newrelic_config_file)
 
 
 LIMIT = 20
