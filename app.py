@@ -9,6 +9,15 @@ import mysql.connector
 from sqlalchemy.pool import QueuePool
 from humps import camelize
 
+from pathlib import Path
+import newrelic.agent
+
+app_root_dir = Path(__file__).parent
+newrelic_config_file = (app_root_dir / 'newrelic.ini')
+if newrelic_config_file.exists():
+newrelic.agent.initialize(newrelic_config_file)
+
+
 LIMIT = 20
 NAZOTTE_LIMIT = 50
 
