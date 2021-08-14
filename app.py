@@ -9,7 +9,7 @@ import mysql.connector
 from sqlalchemy.pool import QueuePool
 from humps import camelize
 
-from uuid import uuid4
+# from uuid import uuid4
 from pathlib import Path
 import newrelic.agent
 
@@ -320,9 +320,9 @@ def post_estate_nazotte():
         "top_left_corner": {"longitude": min(longitudes), "latitude": min(latitudes)},
         "bottom_right_corner": {"longitude": max(longitudes), "latitude": max(latitudes)},
     }
-    req_id = str(uuid4())
-    with (Path('/tmp') / f'{req_id}.req.json').open('w') as fp:
-        json.dump(flask.request.json, fp, indent=2, ensure_ascii=False)
+    # req_id = str(uuid4())
+    # with (Path('/tmp') / f'{req_id}.req.json').open('w') as fp:
+    #     json.dump(flask.request.json, fp, indent=2, ensure_ascii=False)
 
     cnx = cnxpool.connect()
     try:
@@ -374,8 +374,8 @@ def post_estate_nazotte():
             break
         results["estates"].append(camelize(estate))
     results["count"] = len(results["estates"])
-    with (Path('/tmp') / f'{req_id}.res.json').open('w') as fp:
-        json.dump(results, fp, indent=2, ensure_ascii=False)
+    # with (Path('/tmp') / f'{req_id}.res.json').open('w') as fp:
+    #     json.dump(results, fp, indent=2, ensure_ascii=False)
     return results
 
 
