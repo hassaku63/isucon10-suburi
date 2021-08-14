@@ -345,8 +345,8 @@ def post_estate_nazotte():
         #     )
         #     geom_text = f"POINT({estate['latitude']} {estate['longitude']})"
         #     cur.execute(query, (estate["id"], polygon_text, geom_text))
-        #     if len(cur.fetchall()) > 0:
-        #         estates_in_polygon.append(estate)
+        # #     if len(cur.fetchall()) > 0:
+        # #         estates_in_polygon.append(estate)
 
         # Spacial
         polygon_text = (
@@ -355,7 +355,7 @@ def post_estate_nazotte():
         cur.execute(
             (
                 "SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate"
-                " ST_Contains(ST_PolygonFromText(%s), latlng)"
+                " WHERE ST_Contains(ST_PolygonFromText(%s), latlng)"
                 " ORDER BY popularity DESC, id ASC"
             ), (polygon_text,)
         )
