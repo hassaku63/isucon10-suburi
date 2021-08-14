@@ -355,9 +355,9 @@ def post_estate_nazotte():
         cur.execute(
             (
                 "SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate"
-                    " ST_Contains(ST_PolygonFromText(%s), latlng)"
-                    " ORDER BY popularity DESC, id ASC"
-            ), (polygon_text)
+                " ST_Contains(ST_PolygonFromText(%s), latlng)"
+                " ORDER BY popularity DESC, id ASC"
+            ), (polygon_text,)
         )
         estates_in_polygon = cur.fetchall()
 
