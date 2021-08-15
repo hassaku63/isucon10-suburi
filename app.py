@@ -8,6 +8,7 @@ from werkzeug.exceptions import BadRequest, NotFound
 import mysql.connector
 from sqlalchemy.pool import QueuePool
 from humps import camelize
+import re
 
 # from uuid import uuid4
 from pathlib import Path
@@ -37,6 +38,21 @@ mysql_connection_env = {
 
 cnxpool = QueuePool(lambda: mysql.connector.connect(**mysql_connection_env), pool_size=10)
 
+# bot patterns
+patterns_str = [
+    'ISUCONbot(-Mobile)?',
+    'ISUCONbot-Image\/',
+    'Mediapartners-ISUCON',
+    'ISUCONCoffee',
+    'ISUCONFeedSeeker(Beta)?',
+    'crawler \(https:\/\/isucon\.invalid\/(support\/faq\/|help\/jp\/)',
+    'isubot',
+    'Isupider',
+    'Isupider(-image)?\+',
+]
+patterns = [re.compile(p_str) for p_str in patterns_str]
+patterns.append(re.compile('(bot|crawler|spider)(?:[-_ .\/;@()]|$)', re.IGNORECASE))
+
 
 def select_all(query, *args, dictionary=True):
     cnx = cnxpool.connect()
@@ -51,6 +67,14 @@ def select_all(query, *args, dictionary=True):
 def select_row(*args, **kwargs):
     rows = select_all(*args, **kwargs)
     return rows[0] if len(rows) > 0 else None
+
+
+@app.before_request
+def reject_bot():
+    us = flask.request.headers.get('User-Agent')
+    for p in patterns:
+        if p.match(us):
+            return {"message": "reject"}, 503
 
 
 @app.route("/initialize", methods=["POST"])
