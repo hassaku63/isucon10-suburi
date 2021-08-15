@@ -438,9 +438,8 @@ def post_estate():
     try:
         cnx.start_transaction()
         cur = cnx.cursor()
-        for record in records:
-            query = "INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-            cur.execute(query, record)
+        query = "INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        cur.executemany(query, records)
         cnx.commit()
         return {"ok": True}, 201
     except Exception as e:
