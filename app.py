@@ -177,7 +177,7 @@ def get_chair_search():
     query = f"SELECT COUNT(*) as count FROM chair WHERE {search_condition}"
     count = select_row(query, params)["count"]
 
-    query = f"SELECT * FROM chair WHERE {search_condition} ORDER BY popularity DESC, id ASC LIMIT %s OFFSET %s"
+    query = f"SELECT * FROM chair WHERE {search_condition} ORDER BY popularity_desc ASC, id ASC LIMIT %s OFFSET %s"
     chairs = select_all(query, params + [per_page, per_page * page])
 
     return {"count": count, "chairs": camelize(chairs)}
@@ -288,7 +288,7 @@ def get_estate_search():
     query = f"SELECT COUNT(*) as count FROM estate WHERE {search_condition}"
     count = select_row(query, params)["count"]
 
-    query = f"SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE {search_condition} ORDER BY popularity DESC, id ASC LIMIT %s OFFSET %s"
+    query = f"SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE {search_condition} ORDER BY popularity_desc ASC, id ASC LIMIT %s OFFSET %s"
     chairs = select_all(query, params + [per_page, per_page * page])
 
     return {"count": count, "estates": camelize(chairs)}
@@ -360,7 +360,7 @@ def post_estate_nazotte():
             (
                 "SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate"
                 " WHERE ST_Contains(ST_PolygonFromText(%s), latlng)"
-                " ORDER BY popularity DESC, id ASC"
+                " ORDER BY popularity_desc ASC, id ASC"
             ), (polygon_text,)
         )
         estates_in_polygon = cur.fetchall()
@@ -401,7 +401,7 @@ def get_recommended_estate(chair_id):
         "    OR (door_width >= %s AND door_height >= %s)"
         "    OR (door_width >= %s AND door_height >= %s)"
         "    OR (door_width >= %s AND door_height >= %s)"
-        " ORDER BY popularity DESC, id ASC"
+        " ORDER BY popularity_desc ASC, id ASC"
         " LIMIT %s"
     )
     estates = select_all(query, (w, h, w, d, h, w, h, d, d, w, d, h, LIMIT))
