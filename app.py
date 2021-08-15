@@ -8,6 +8,7 @@ from werkzeug.exceptions import BadRequest, NotFound
 import mysql.connector
 from sqlalchemy.pool import QueuePool
 from humps import camelize
+import re
 
 # from uuid import uuid4
 from pathlib import Path
@@ -52,6 +53,14 @@ def select_row(*args, **kwargs):
     rows = select_all(*args, **kwargs)
     return rows[0] if len(rows) > 0 else None
 
+
+p = re.compile(r'ISUCONbot(-Mobile)?')
+
+@app.before_request
+def reject_bot():
+    us = flask.headers.get('User-Agent')
+    if p.match(us):
+        return {"message": "bot access"}, 503
 
 @app.route("/initialize", methods=["POST"])
 def post_initialize():
