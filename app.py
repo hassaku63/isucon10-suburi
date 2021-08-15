@@ -235,7 +235,7 @@ def post_chair_buy(chair_id):
         cnx.start_transaction()
         cur = cnx.cursor(dictionary=True)
         cur.execute("UPDATE chair SET stock = stock - 1 WHERE id = %s AND stock > 0", (chair_id,))
-        if affected_rows == 0:
+        if cur.rowcount == 0:
             raise NotFound()
         cnx.commit()
         return {"ok": True}
