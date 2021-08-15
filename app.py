@@ -38,6 +38,21 @@ mysql_connection_env = {
 
 cnxpool = QueuePool(lambda: mysql.connector.connect(**mysql_connection_env), pool_size=10)
 
+# bot patterns
+patterns_str = [
+    'ISUCONbot(-Mobile)?',
+    'ISUCONbot-Image\/',
+    'Mediapartners-ISUCON',
+    'ISUCONCoffee',
+    'ISUCONFeedSeeker(Beta)?',
+    'crawler \(https:\/\/isucon\.invalid\/(support\/faq\/|help\/jp\/)',
+    'isubot',
+    'Isupider',
+    'Isupider(-image)?\+',
+]
+patterns = [re.compile(p_str) for p_str in patterns_str]
+patterns.append(re.compile('(bot|crawler|spider)(?:[-_ .\/;@()]|$)', re.IGNORECASE))
+
 
 def select_all(query, *args, dictionary=True):
     cnx = cnxpool.connect()
@@ -54,13 +69,13 @@ def select_row(*args, **kwargs):
     return rows[0] if len(rows) > 0 else None
 
 
-p = re.compile(r'ISUCONbot(-Mobile)?')
-
 @app.before_request
 def reject_bot():
-    us = flask.headers.get('User-Agent')
-    if p.match(us):
-        return {"message": "bot access"}, 503
+    us = flask.request.headers.get('User-Agent')
+    for p in patterns:
+        if p.match(us):
+            return {"message": "reject"}, 503
+
 
 @app.route("/initialize", methods=["POST"])
 def post_initialize():
