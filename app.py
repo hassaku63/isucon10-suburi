@@ -36,7 +36,7 @@ mysql_connection_env = {
     "database": getenv("MYSQL_DBNAME", "isuumo"),
 }
 
-cnxpool = QueuePool(lambda: mysql.connector.connect(**mysql_connection_env), pool_size=10)
+cnxpool = QueuePool(lambda: mysql.connector.connect(**mysql_connection_env), pool_size=30)
 
 # bot patterns
 patterns_str = [
