@@ -224,13 +224,19 @@ def get_chair(chair_id):
 def post_chair_buy(chair_id):
     cnx = cnxpool.connect()
     try:
+        # cnx.start_transaction()
+        # cur = cnx.cursor(dictionary=True)
+        # cur.execute("SELECT * FROM chair WHERE id = %s AND stock > 0 FOR UPDATE", (chair_id,))
+        # chair = cur.fetchone()
+        # if chair is None:
+        #     raise NotFound()
+        # cur.execute("UPDATE chair SET stock = stock - 1 WHERE id = %s", (chair_id,))
+        # cnx.commit()
         cnx.start_transaction()
         cur = cnx.cursor(dictionary=True)
-        cur.execute("SELECT * FROM chair WHERE id = %s AND stock > 0 FOR UPDATE", (chair_id,))
-        chair = cur.fetchone()
-        if chair is None:
+        cur.execute("UPDATE chair SET stock = stock - 1 WHERE id = %s AND stock > 0", (chair_id,))
+        if affected_rows == 0:
             raise NotFound()
-        cur.execute("UPDATE chair SET stock = stock - 1 WHERE id = %s", (chair_id,))
         cnx.commit()
         return {"ok": True}
     except Exception as e:
